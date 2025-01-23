@@ -1,42 +1,110 @@
-const express = require('express');
-const { Pool } = require('pg');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-require('dotenv').config();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Contact Form</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.20.7/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+<script type="text/babel">
+  function ContactForm() {
+    const [formData, setFormData] = React.useState({
+      name: '',
+      email: '',
+      message: ''
+    });
 
-const app = express();
-const port = process.env.PORT || 5000;
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData({ ...formData, [name]: value });
+    };
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const response = await fetch('/api/contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (response.ok) {
+          alert('Thank you for contacting us!');
+          setFormData({ name: '', email: '', message: '' }); // Reset form
+        } else {
+          alert('Failed to send your message. Please try again later.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error connecting to the server.');
+      }
+    };
 
-// Database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
-
-// Endpoint to save contact form data
-app.post('/api/contacts', async (req, res) => {
-  const { name, email, message } = req.body;
-
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-
-  try {
-    const result = await pool.query(
-      'INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3) RETURNING *',
-      [name, email, message]
+    return (
+      <div style={{ maxWidth: '400px', margin: 'auto', padding: '20px' }}>
+        <h2>Contact Us</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '10px' }}>
+            <label>
+              Name:
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+              />
+            </label>
+          </div>
+          <div style={{ marginBottom: '10px' }}>
+            <label>
+              Email:
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+              />
+            </label>
+          </div>
+          <div style={{ marginBottom: '10px' }}>
+            <label>
+              Message:
+              <textarea
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+                required
+                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+              ></textarea>
+            </label>
+          </div>
+          <button
+            type="submit"
+            style={{
+              backgroundColor: '#007BFF',
+              color: 'white',
+              padding: '10px 20px',
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: '5px'
+            }}
+          >
+            Submit
+          </button>
+        </form>
+      </div>
     );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Database error' });
   }
-});
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+  ReactDOM.createRoot(document.getElementById('root')).render(<ContactForm />);
+</script>
+  
+</body>
+</html>
