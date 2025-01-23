@@ -2,9 +2,9 @@
   "name": "render-database-app",
   "version": "1.0.0",
   "description": "Node.js Express app with PostgreSQL for Render.com",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
