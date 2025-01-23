@@ -1,47 +1,42 @@
 const express = require('express');
 const { Pool } = require('pg');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Set up the PostgreSQL client pool
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// Database connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Use this for Render-hosted databases
+  ssl: { rejectUnauthorized: false },
 });
 
-// Create the contacts table
-const createTable = async () => {
-  const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS contacts (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(100) NOT NULL,
-      email VARCHAR(100) NOT NULL,
-      message TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `;
+// Endpoint to save contact form data
+app.post('/api/contacts', async (req, res) => {
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
 
   try {
-    const client = await pool.connect();
-    await client.query(createTableQuery);
-    console.log('Contacts table created successfully.');
-    client.release();
+    const result = await pool.query(
+      'INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3) RETURNING *',
+      [name, email, message]
+    );
+    res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Error creating table:', err.message);
+    console.error(err.message);
+    res.status(500).json({ error: 'Database error' });
   }
-};
-
-// Automatically create the table on server start
-createTable();
-
-// Basic route
-app.get('/', (req, res) => {
-  res.send('Contacts table setup complete!');
 });
 
-// Start the server
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });
