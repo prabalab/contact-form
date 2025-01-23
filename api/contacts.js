@@ -71,7 +71,7 @@ app.use(express.static(path.join(__dirname, 'client', 'build')));
 
 // Serve React's index.html on the default route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Start the server
